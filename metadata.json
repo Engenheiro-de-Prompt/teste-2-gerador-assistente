@@ -1,0 +1,5 @@
+{
+  "name": "AI Assistant Proxy Manager",
+  "description": "Create and manage embeddable OpenAI assistants. This application acts as a management dashboard for your AI chatbots, allowing you to configure them and generate an embed code. The embed code works as a client-side component, and a proper backend proxy is recommended for production use to secure your API keys.",
+  "requestFramePermissions": []
+}
