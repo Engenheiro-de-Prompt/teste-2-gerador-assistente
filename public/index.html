@@ -127,11 +127,20 @@
                         body: JSON.stringify(data),
                     });
 
-                    const result = await response.json();
-
                     if (!response.ok) {
-                        throw new Error(result.error || 'Ocorreu um erro desconhecido.');
+                        let errorMsg = `HTTP Error: ${response.status}`;
+                        try {
+                            const errorResult = await response.json();
+                            errorMsg = errorResult.error || errorMsg;
+                        } catch (e) {
+                            // A resposta não era JSON, pode ser texto ou HTML
+                            const errorText = await response.text();
+                            errorMsg = errorText.substring(0, 100) || errorMsg; // Limita o tamanho
+                        }
+                        throw new Error(errorMsg);
                     }
+
+                    const result = await response.json();
 
                     document.getElementById('chat-url').href = result.chatUrl;
                     document.getElementById('chat-url').textContent = result.chatUrl;
