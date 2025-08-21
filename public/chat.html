@@ -60,13 +60,14 @@
                     removeTypingIndicator();
 
                     if (!response.ok) {
-                        let errorMsg = `HTTP Error: ${response.status}`;
-                        try {
-                            const errorResult = await response.json();
-                            errorMsg = errorResult.error || errorMsg;
-                        } catch (e) {
+                        let errorMsg;
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const errorJson = await response.json();
+                            errorMsg = errorJson.error || `HTTP Error: ${response.status}`;
+                        } else {
                             const errorText = await response.text();
-                            errorMsg = errorText.substring(0, 100) || errorMsg;
+                            errorMsg = `Server Error: ${errorText.substring(0, 200)}`;
                         }
                         throw new Error(errorMsg);
                     }
