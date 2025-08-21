@@ -1,21 +1,19 @@
 {
-  "name": "ai-assistant-proxy-manager",
-  "private": true,
-  "version": "0.0.0",
+  "name": "openai-assistant-proxy",
+  "version": "1.0.0",
+  "description": "A proxy server for OpenAI assistants to provide secure embeddable chatbots.",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "start": "node server.js"
   },
+  "author": "Jules",
+  "license": "MIT",
   "dependencies": {
-    "react-dom": "^19.1.1",
-    "react": "^19.1.1",
-    "react-router-dom": "^7.8.1"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "openai": "^5.13.1",
+    "uuid": "^11.1.0"
   }
 }
