@@ -58,11 +58,20 @@
                     });
 
                     removeTypingIndicator();
-                    const result = await response.json();
 
                     if (!response.ok) {
-                        throw new Error(result.error || 'Falha ao obter resposta.');
+                        let errorMsg = `HTTP Error: ${response.status}`;
+                        try {
+                            const errorResult = await response.json();
+                            errorMsg = errorResult.error || errorMsg;
+                        } catch (e) {
+                            const errorText = await response.text();
+                            errorMsg = errorText.substring(0, 100) || errorMsg;
+                        }
+                        throw new Error(errorMsg);
                     }
+
+                    const result = await response.json();
 
                     threadId = result.threadId; // Atualiza o threadId
                     addMessage('assistant', result.response);
