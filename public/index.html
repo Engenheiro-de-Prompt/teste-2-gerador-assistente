@@ -128,14 +128,14 @@
                     });
 
                     if (!response.ok) {
-                        let errorMsg = `HTTP Error: ${response.status}`;
-                        try {
-                            const errorResult = await response.json();
-                            errorMsg = errorResult.error || errorMsg;
-                        } catch (e) {
-                            // A resposta não era JSON, pode ser texto ou HTML
+                        let errorMsg;
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const errorJson = await response.json();
+                            errorMsg = errorJson.error || `HTTP Error: ${response.status}`;
+                        } else {
                             const errorText = await response.text();
-                            errorMsg = errorText.substring(0, 100) || errorMsg; // Limita o tamanho
+                            errorMsg = `Server Error: ${errorText.substring(0, 200)}`;
                         }
                         throw new Error(errorMsg);
                     }
@@ -146,13 +146,10 @@
                     document.getElementById('chat-url').textContent = result.chatUrl;
                     document.getElementById('embed-code').value = result.embedCode;
 
-                    // Limpa a pré-visualização anterior e insere a nova
                     const previewContainer = document.getElementById('preview-container');
-                    previewContainer.innerHTML = ''; // Limpa
-                    const previewScript = document.createElement('script');
+                    previewContainer.innerHTML = '';
                     const scriptTag = document.createRange().createContextualFragment(result.embedCode);
                     previewContainer.appendChild(scriptTag);
-
 
                     resultDiv.style.display = 'block';
 
