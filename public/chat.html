@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3>Fale com o Assistente</h3>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- As mensagens do chat aparecerão aqui -->
+        </div>
+        <div class="chat-input-area">
+            <form id="chat-form">
+                <input type="text" id="message-input" placeholder="Digite sua mensagem..." autocomplete="off" required>
+                <button type="submit">Enviar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatMessages = document.getElementById('chat-messages');
+            const chatForm = document.getElementById('chat-form');
+            const messageInput = document.getElementById('message-input');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const configId = urlParams.get('configId');
+            let threadId = null; // Começa nulo para cada nova sessão
+
+            if (!configId) {
+                addMessage('error', 'Erro de configuração: ID do Chatbot não encontrado.');
+                return;
+            }
+             addMessage('assistant', 'Olá! Como posso ajudar você hoje?');
+
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const messageText = messageInput.value.trim();
+                if (!messageText) return;
+
+                addMessage('user', messageText);
+                messageInput.value = '';
+                showTypingIndicator();
+
+                try {
+                    const response = await fetch(`/api/chat/${configId}/message`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: messageText,
+                            threadId: threadId
+                        }),
+                    });
+
+                    removeTypingIndicator();
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Falha ao obter resposta.');
+                    }
+
+                    threadId = result.threadId; // Atualiza o threadId
+                    addMessage('assistant', result.response);
+
+                } catch (err) {
+                    removeTypingIndicator();
+                    addMessage('error', `Erro: ${err.message}`);
+                }
+            });
+
+            function addMessage(sender, text) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', `${sender}-message`);
+                // Sanitize text before inserting
+                const content = document.createElement('div');
+                content.textContent = text;
+                messageElement.appendChild(content);
+                chatMessages.appendChild(messageElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function showTypingIndicator() {
+                let indicator = document.getElementById('typing-indicator');
+                if (!indicator) {
+                    indicator = document.createElement('div');
+                    indicator.id = 'typing-indicator';
+                    indicator.classList.add('message', 'assistant-message');
+                    indicator.innerHTML = `<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>`;
+                    chatMessages.appendChild(indicator);
+                }
+                 chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function removeTypingIndicator() {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

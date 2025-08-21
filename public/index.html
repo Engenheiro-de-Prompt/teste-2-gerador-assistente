@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Embed de Assistente OpenAI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Gerador de Embed de Chatbot</h1>
+        <p>Crie um chatbot flutuante para o seu site em segundos. Suas chaves de API são enviadas de forma segura e nunca expostas no lado do cliente.</p>
+
+        <form id="config-form">
+            <div class="form-group">
+                <label for="apiKey">Sua Chave de API da OpenAI <span>*</span></label>
+                <input type="password" id="apiKey" name="apiKey" required>
+            </div>
+
+            <fieldset class="form-group">
+                <legend>Tipo de Assistente</legend>
+                <input type="radio" id="type-existing" name="assistantType" value="existing" checked>
+                <label for="type-existing">Usar um Assistente Existente</label>
+                <br>
+                <input type="radio" id="type-new" name="assistantType" value="new">
+                <label for="type-new">Criar um Novo Assistente</label>
+            </fieldset>
+
+            <!-- Campos para Assistente Existente -->
+            <div id="existing-assistant-fields">
+                <div class="form-group">
+                    <label for="assistantId">ID do Assistente (asst_...)</label>
+                    <input type="text" id="assistantId" name="assistantId">
+                </div>
+            </div>
+
+            <!-- Campos para Novo Assistente -->
+            <div id="new-assistant-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="name">Nome do Assistente <span>*</span></label>
+                    <input type="text" id="name" name="name">
+                </div>
+                <div class="form-group">
+                    <label for="description">Instruções / Descrição <span>*</span></label>
+                    <textarea id="description" name="description" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="model">Modelo (opcional, padrão: gpt-4o)</label>
+                    <input type="text" id="model" name="model" placeholder="gpt-4o">
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn">Gerar Código de Embed</button>
+        </form>
+
+        <div id="result" style="display: none;">
+            <h2>Seu chatbot está pronto!</h2>
+
+            <div class="result-section">
+                <h3>URL Direta do Chat</h3>
+                <p>Use este link para acessar seu chatbot diretamente.</p>
+                <a id="chat-url" href="#" target="_blank"></a>
+            </div>
+
+            <div class="result-section">
+                <h3>Código de Incorporação (Embed)</h3>
+                <p>Copie e cole este código no HTML do seu site antes de fechar a tag &lt;/body&gt;.</p>
+                <textarea id="embed-code" rows="3" readonly></textarea>
+            </div>
+
+            <div class="result-section">
+                <h3>Pré-visualização ao Vivo</h3>
+                <p>Teste seu chatbot aqui mesmo.</p>
+                <div id="preview-container"></div>
+            </div>
+        </div>
+
+        <div id="error-message" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('config-form');
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error-message');
+            const submitBtn = document.getElementById('submit-btn');
+
+            const existingFields = document.getElementById('existing-assistant-fields');
+            const newFields = document.getElementById('new-assistant-fields');
+            const assistantIdInput = document.getElementById('assistantId');
+            const nameInput = document.getElementById('name');
+            const descriptionInput = document.getElementById('description');
+
+            document.querySelectorAll('input[name="assistantType"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const isNew = e.target.value === 'new';
+                    newFields.style.display = isNew ? 'block' : 'none';
+                    existingFields.style.display = isNew ? 'none' : 'block';
+
+                    // Alterna a obrigatoriedade dos campos
+                    assistantIdInput.required = !isNew;
+                    nameInput.required = isNew;
+                    descriptionInput.required = isNew;
+                });
+            });
+            // Inicializa o estado de 'required'
+            assistantIdInput.required = true;
+
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Reset UI
+                resultDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Gerando...';
+
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/api/create-embed', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Ocorreu um erro desconhecido.');
+                    }
+
+                    document.getElementById('chat-url').href = result.chatUrl;
+                    document.getElementById('chat-url').textContent = result.chatUrl;
+                    document.getElementById('embed-code').value = result.embedCode;
+
+                    // Limpa a pré-visualização anterior e insere a nova
+                    const previewContainer = document.getElementById('preview-container');
+                    previewContainer.innerHTML = ''; // Limpa
+                    const previewScript = document.createElement('script');
+                    const scriptTag = document.createRange().createContextualFragment(result.embedCode);
+                    previewContainer.appendChild(scriptTag);
+
+
+                    resultDiv.style.display = 'block';
+
+                } catch (err) {
+                    errorDiv.textContent = `Erro: ${err.message}`;
+                    errorDiv.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Gerar Código de Embed';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
